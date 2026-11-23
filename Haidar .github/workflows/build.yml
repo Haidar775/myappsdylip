@@ -1,0 +1,35 @@
+name: Build iOS Dylib
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Welcome.m'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compile Dylib
+        run: |
+          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang -arch arm64 \
+            -isysroot "$SDK_PATH" \
+            -miphoneos-version-min=14.0 \
+            -dynamiclib \
+            -fobjc-arc \
+            -framework UIKit \
+            -framework Foundation \
+            -framework QuartzCore \
+            -install_name "@rpath/Welcome.dylib" \
+            Welcome.m -o Welcome.dylib
+          codesign -f -s - Welcome.dylib
+
+      - name: Upload Dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: Welcome-Dylib
+          path: Welcome.dylib
